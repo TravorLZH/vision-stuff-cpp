@@ -16,7 +16,7 @@ static Rect convert_rect(dlib::rectangle rect)
 
 int main(int argc,char **argv)
 {
-	array2d<rgb_pixel> img;	// Use grayscale to optimize
+	array2d<rgb_pixel> img;
 	frontal_face_detector detector=get_frontal_face_detector();
 	if(argc<2){
 		cerr<<"usage: "<<argv[0]<<" image_file"<<endl;
