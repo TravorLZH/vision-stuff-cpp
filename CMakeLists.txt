@@ -27,4 +27,4 @@ add_executable(find_faces find_faces.cpp)
 target_link_libraries(find_faces ${OpenCV_LIBS} dlib::dlib)
 
 add_executable(face_thuglife face_thuglife.cpp)
-target_link_libraries(find_faces ${OpenCV_LIBS} dlib::dlib)
+target_link_libraries(face_thuglife ${OpenCV_LIBS} dlib::dlib)

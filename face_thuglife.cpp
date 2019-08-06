@@ -2,13 +2,19 @@
 #include <cstring>
 #include <unistd.h>
 #include <dlib/image_io.h>
-#include <opencv2/opencv.hpp>
+#include <dlib/image_processing/frontal_face_detector.h>
+#include <dlib/image_processing.h>
 
 using namespace std;
-using namespace cv;
 using namespace dlib;
 
 char output_file[FILENAME_MAX];
+
+/* Name of the landmark shape predictor model file */
+const char landmark_sp_model[]="shape_predictor_68_face_landmarks.dat";
+
+/* Shape predictor that is used to detect face landmarks */
+static shape_predictor sp;
 
 /*
  * This function transforms the input file name to the output name
@@ -17,10 +23,8 @@ char output_file[FILENAME_MAX];
  * An example of the conversion is shown below:
  * "/path/to/img.jpg" => "/path/to/img_thuglife.png"
  * Notice that the extension is forced to be PNG at last
- *
- * P.S. I like C-style symbols!
  */
-extern "C" void form_output_filename(const char *input_file)
+void form_output_filename(const char *input_file)
 {
 	char *ptr,*end;
 	strcpy(output_file,input_file);	// Alter them in the output buffer
@@ -53,6 +57,21 @@ int main(int argc,char **argv)
 	if(access(argv[1],R_OK)){
 		perror(argv[1]);
 		return -1;
+	}
+	if(access(landmark_sp_model,R_OK)){
+		cerr<<"error: `"<<landmark_sp_model<<"\' must be in the" \
+			" working directory"<<endl;
+		return -2;
+	}
+	/* Initialize face detector and landmark predictor */
+	frontal_face_detector detector=get_frontal_face_detector();
+	deserialize(landmark_sp_model) >> sp;
+	/* Get rectangles that contain faces */
+	load_image(img,argv[1]);
+	std::vector<rectangle> dets=detector(img);
+	for(int i=0;i<dets.size();i++){
+		full_object_detection shape=sp(img,dets[i]);
+		cout<<"Found "<<shape.num_parts()<<" in this face"<<endl;
 	}
 	cout<<"Output production to `"<<output_file<<'\''<<endl;
 	return 0;
