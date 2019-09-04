@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#define	NDEBUG	// Do not perform assertion
 #include <cassert>
 #include <cmath>
 #include <unistd.h>
@@ -113,25 +114,16 @@ int main(int argc,char **argv)
 		strcpy(output_file,argv[2]);
 	else
 		form_output_filename(argv[1]);
-	if(access(thuglife_name,R_OK)){
-		perror(thuglife_name);
-		return 2;
-	}
-	/* Now read the sunglasses picture */
-	// NOTE: It is a four channel image
-	thuglife_img=imread(thuglife_name,cv::IMREAD_UNCHANGED);
-	tl_width=thuglife_img.cols;
-	tl_height=thuglife_img.rows;
-	assert(thuglife_img.channels()==4);
 	cout<<"Processing `"<<argv[1]<<'\''<<endl;
 	if(access(argv[1],R_OK)){
 		perror(argv[1]);
 		return -1;
 	}
+	cout<<"Loading `"<<landmark_sp_model<<"\'..."<<endl;
 	if(access(landmark_sp_model,R_OK)){
 		cerr<<"error: `"<<landmark_sp_model<<"\' must be in the" \
 			" working directory"<<endl;
-		cerr<<"You can obtain it from <http://dlib.net/files/" \
+		cerr<<"Obtain it from <http://dlib.net/files/" \
 			"shape_predictor_68_face_landmarks.dat.bz2>"<<endl;
 		return -2;
 	}
@@ -140,13 +132,31 @@ int main(int argc,char **argv)
 	deserialize(landmark_sp_model) >> sp;
 	/* Get rectangles that contain faces */
 	load_image(img,argv[1]);
+	cout<<"Detecting faces"<<endl;
 	std::vector<rectangle> dets=detector(img);
-	cvtColor(toMat(img),cv_img,cv::COLOR_RGB2BGR);
+	if(dets.size()==0){
+		cerr<<"error: Found no faces, quitting..."<<endl;
+		return -1;
+	}
+	cout<<"Found "<<dets.size()<<" faces"<<endl;
+	/* Now read the sunglasses picture */
+	// NOTE: It is a four channel image
+	cout<<"Loading `"<<thuglife_name<<"\'..."<<endl;
+	if(access(thuglife_name,R_OK)){
+		perror(thuglife_name);
+		return 2;
+	}
+	thuglife_img=imread(thuglife_name,cv::IMREAD_UNCHANGED);
+	tl_width=thuglife_img.cols;
+	tl_height=thuglife_img.rows;
+	assert(thuglife_img.channels()==4);
+	cv::cvtColor(toMat(img),cv_img,cv::COLOR_RGB2BGR);
+	cout<<"Detecting face landmarks..."<<endl;
 	for(int i=0;i<dets.size();i++){
 		full_object_detection shape=sp(img,dets[i]);
 		put_sunglasses(cv_img,shape);
 	}
-	cout<<"Output production to `"<<output_file<<'\''<<endl;
+	cout<<"Output production to `"<<output_file<<"\'..."<<endl;
 	cv::imwrite(output_file,cv_img);
 	return 0;
 }
